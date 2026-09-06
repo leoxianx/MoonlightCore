@@ -15,11 +15,7 @@ public final class ModDeferredRegisters {
 
     @SuppressWarnings("unchecked")
     public static <T> DeferredRegister<T> get(ResourceKey<? extends Registry<T>> registry, String modId) {
-        DeferredRegister<?> register = DEFERRED_REGISTERS.get(registry, modId);
-        if (register == null) {
-            register = DeferredRegister.create(registry, modId);
-            DEFERRED_REGISTERS.put(registry, modId, register);
-        }
+        DeferredRegister<?> register = DEFERRED_REGISTERS.row(registry).computeIfAbsent(modId, k -> DeferredRegister.create(registry, k));
         return (DeferredRegister<T>) register;
     }
 

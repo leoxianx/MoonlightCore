@@ -2,6 +2,7 @@ package de.leoxian.moonlightcore.neoforge.client.platform;
 
 import de.leoxian.moonlightcore.client.color.BlockColorRegistrar;
 import de.leoxian.moonlightcore.client.command.ClientCommandsContext;
+import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandler;
 import de.leoxian.moonlightcore.client.gui.GuiLayerRegistrar;
 import de.leoxian.moonlightcore.client.keymapping.KeyMappingRegistrar;
 import de.leoxian.moonlightcore.client.menu.MenuScreenRegistrar;
@@ -19,6 +20,7 @@ import de.leoxian.moonlightcore.client.render.RenderPipelineRegistrar;
 import de.leoxian.moonlightcore.common.ClientModEntrypoint;
 import de.leoxian.moonlightcore.neoforge.client.color.NeoforgeBlockColorRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.command.NeoforgeClientCommandsContext;
+import de.leoxian.moonlightcore.neoforge.client.fluid.NeoforgeClientFluidRenderHandlerWrapper;
 import de.leoxian.moonlightcore.neoforge.client.gui.NeoforgeGuiLayerRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.keymapping.NeoforgeKeyMappingRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.menu.NeoforgeMenuScreenRegistrar;
@@ -34,16 +36,27 @@ import de.leoxian.moonlightcore.neoforge.client.render.NeoforgeRenderPipelineReg
 import de.leoxian.moonlightcore.neoforge.common.ModEventBuses;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.common.NeoForge;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class NeoforgeClientAbstraction implements XplatClientAbstraction {
+    public record FluidModelRegistration(Supplier<Fluid> fluidSupplier, FluidModel.Unbaked model, @Nullable NeoforgeClientFluidRenderHandlerWrapper handler) {}
+    private static final Map<Supplier<Fluid>, FluidModelRegistration> FLUID_RENDER_HANDLERS = new HashMap<>();
+
     @Override
     public void initializeClientMod(String modId, ClientModEntrypoint entrypoint) {
         try {
@@ -51,6 +64,16 @@ public class NeoforgeClientAbstraction implements XplatClientAbstraction {
         } catch (Throwable e) {
             throw new RuntimeException("Failed to initialize client mod '" + modId + "'", e);
         }
+    }
+
+    @Override
+    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model) {
+        registerFluidModel(fluid, model, null);
+    }
+
+    @Override
+    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model, ClientFluidRenderHandler handler) {
+        FLUID_RENDER_HANDLERS.put(fluid, new FluidModelRegistration(fluid, model, new NeoforgeClientFluidRenderHandlerWrapper(fluid)));
     }
 
     @Override
@@ -177,5 +200,10 @@ public class NeoforgeClientAbstraction implements XplatClientAbstraction {
     @Override
     public void initialize() {
 
+    }
+
+    @UnmodifiableView
+    public static Map<Supplier<Fluid>, FluidModelRegistration> getFluidRenderHandlers() {
+        return Collections.unmodifiableMap(FLUID_RENDER_HANDLERS);
     }
 }

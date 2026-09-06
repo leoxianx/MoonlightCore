@@ -3,9 +3,8 @@ package de.leoxian.moonlightcore.mixin.dimension;
 import com.mojang.datafixers.DataFixer;
 import de.leoxian.moonlightcore.common.network.PacketDistributor;
 import de.leoxian.moonlightcore.common.server.dimension.DynamicDimensionRegistry;
-import de.leoxian.moonlightcore.common.server.dimension.PlayerRemover;
+import de.leoxian.moonlightcore.common.server.dimension.DimensionPlayerRemover;
 import de.leoxian.moonlightcore.common.util.DynamicRegistryUtils;
-import de.leoxian.moonlightcore.internal.common.mod.InternalMod;
 import de.leoxian.moonlightcore.internal.common.network.s2c.S2CRemoveDimensionPacket;
 import de.leoxian.moonlightcore.internal.common.server.dimension.DynamicDimensionProvider;
 import de.leoxian.moonlightcore.internal.common.server.dimension.DynamicDimensionRegistryImpl;
@@ -119,8 +118,8 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
     }
 
     @Override
-    public void moonlightcore$removeLevel(ResourceKey<Level> key, @Nullable PlayerRemover playerRemover, boolean removeFiles) {
-        PlayerRemover remover = playerRemover == null ? PlayerRemover.DEFAULT : playerRemover;
+    public void moonlightcore$removeLevel(ResourceKey<Level> key, @Nullable DimensionPlayerRemover playerRemover, boolean removeFiles) {
+        DimensionPlayerRemover remover = playerRemover == null ? DimensionPlayerRemover.DEFAULT : playerRemover;
         if (this.tickingLevels) {
             this.moonlightcore$pendingRemovalTickets.add(new DynamicDimensionRemovalTicket(key, remover, removeFiles));
         } else {
@@ -168,7 +167,7 @@ public abstract class MinecraftServerMixin implements DynamicDimensionProvider {
         level.tick(() -> true);
     }
 
-    private void unloadLevel(ResourceKey<Level> key, PlayerRemover remover) {
+    private void unloadLevel(ResourceKey<Level> key, DimensionPlayerRemover remover) {
         Identifier dimType = null;
         try (ServerLevel level = this.levels.get(key)) {
             if (level == null) {

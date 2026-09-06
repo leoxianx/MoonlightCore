@@ -9,6 +9,8 @@ import de.leoxian.moonlightcore.common.capability.item.ItemCapability;
 import de.leoxian.moonlightcore.common.command.ArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.common.command.CommandRegistrarContext;
 import de.leoxian.moonlightcore.common.entity.EntityAttributeRegistrar;
+import de.leoxian.moonlightcore.common.fluid.BaseFlowingFluid;
+import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
 import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.common.pack.DataPackRegistryRegistrar;
@@ -32,6 +34,8 @@ import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -45,6 +49,10 @@ public interface XplatAbstraction {
     XplatAbstraction INSTANCE = ServiceLoader.load(XplatAbstractionFactory.class).findFirst().orElseThrow().create();
 
     void initializeMod(final String modId, final ModEntrypoint entrypoint);
+
+    // |-----| Fluids |-----|
+
+    <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, BaseFlowingFluid.Source sourceFluidHandler, BaseFlowingFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler);
 
     // |-----| Registrars |-----|
     void entityAttributes(String namespace, Consumer<EntityAttributeRegistrar> initializer);

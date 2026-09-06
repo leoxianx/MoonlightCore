@@ -128,7 +128,7 @@ public class DeferredHolder<R, T extends R> implements Holder<R>, Supplier<T> {
     public final void tryBind(boolean throwOnMissingRegistry) {
         if (this.holder != null) return;
 
-        final var registry = (Registry<R>) BuiltInRegistries.REGISTRY.get(this.key.registry()).orElse(null);
+        final var registry = (Registry<R>) BuiltInRegistries.REGISTRY.getValue(this.key.registry());
         if (registry != null) {
             this.holder = (Holder<T>) registry.get(this.key).orElse(null);
         } else if (throwOnMissingRegistry) {

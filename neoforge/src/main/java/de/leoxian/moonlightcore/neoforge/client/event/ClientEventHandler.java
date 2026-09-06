@@ -1,27 +1,113 @@
 package de.leoxian.moonlightcore.neoforge.client.event;
 
 import de.leoxian.moonlightcore.client.event.*;
+import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandler;
+import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandlers;
 import de.leoxian.moonlightcore.common.event.base.CompoundEventResult;
+import de.leoxian.moonlightcore.common.transfer.fluid.FluidResource;
+import de.leoxian.moonlightcore.neoforge.client.fluid.NeoforgeClientFluidRenderHandlerWrapper;
+import de.leoxian.moonlightcore.neoforge.client.platform.NeoforgeClientAbstraction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.fog.FogData;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.event.lifecycle.ClientStartedEvent;
 import net.neoforged.neoforge.client.event.lifecycle.ClientStoppingEvent;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.client.fluid.FluidTintSource;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.player.FluidTooltipEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.fluids.FluidType;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 @EventBusSubscriber(value = Dist.CLIENT)
 public class ClientEventHandler {
+    @SubscribeEvent
+    public static void onRegisterFluidColorHandlers(RegisterColorHandlersEvent.BlockTintSources event) {
+        for (Fluid fluid : BuiltInRegistries.FLUID) {
+            Identifier id = BuiltInRegistries.FLUID.getKey(fluid);
+            if (id.getNamespace().equalsIgnoreCase(Identifier.DEFAULT_NAMESPACE)) {
+                // Don't allow any vanilla fluid
+                continue;
+            }
+
+            Block block = fluid.defaultFluidState().createLegacyBlock().getBlock();
+            if (block != Blocks.AIR) {
+                final Fluid targetFluid = fluid;
+
+                event.register(List.of(new FluidTintSource() {
+                    @Override
+                    public int color(FluidState state) {
+                        FluidResource resource = FluidResource.of(targetFluid);
+                        return ClientFluidRenderHandlers.get(targetFluid).getColor(resource, null, null);
+                    }
+
+                    @Override
+                    public int colorAsTerrainParticle(BlockState state, BlockAndTintGetter level, BlockPos pos) {
+                        ClientFluidRenderHandler handler = ClientFluidRenderHandlers.get(targetFluid);
+                        FluidResource resource = FluidResource.of(targetFluid);
+                        return handler.getColor(resource, level, pos);
+                    }
+
+                    @Override
+                    public int colorInWorld(BlockState state, BlockAndTintGetter level, BlockPos pos) {
+                        ClientFluidRenderHandler handler = ClientFluidRenderHandlers.get(targetFluid);
+                        FluidResource resource = FluidResource.of(targetFluid);
+                        return handler.getColor(resource, level, pos);
+                    }
+                }), block);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        for (final var entry : NeoforgeClientAbstraction.getFluidRenderHandlers().entrySet()) {
+            NeoforgeClientAbstraction.FluidModelRegistration registration = entry.getValue();
+            FluidType type = registration.fluidSupplier().get().getFluidType();
+            if (!event.isFluidTypeRegistered(type)) {
+                event.registerFluidType(new NeoforgeClientFluidRenderHandlerWrapper(registration.fluidSupplier()), type);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterFluidModels(RegisterFluidModelsEvent event) {
+        for (final var entry : NeoforgeClientAbstraction.getFluidRenderHandlers().entrySet()) {
+            NeoforgeClientAbstraction.FluidModelRegistration registration = entry.getValue();
+            if (registration != null) {
+                event.register(registration.model(), registration.fluidSupplier());
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onAppendFluidTooltips(FluidTooltipEvent event) {
+        FluidResource resource = FluidResource.of(event.getFluidStack().getFluid(), event.getFluidStack().getComponentsPatch());
+        ClientFluidRenderHandlers.get(event.getFluidStack().getFluid()).appendTooltip(resource, event.getToolTip(), event.getFlags());
+    }
+
     @SubscribeEvent
     public static void onBlockEntityLoad(ChunkEvent.Load event) {
         if (event.getLevel() instanceof ClientLevel level) {

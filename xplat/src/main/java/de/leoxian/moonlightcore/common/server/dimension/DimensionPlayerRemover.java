@@ -9,8 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Set;
 
 @FunctionalInterface
-public interface PlayerRemover {
-    PlayerRemover DEFAULT = (server, player) -> {
+public interface DimensionPlayerRemover {
+    DimensionPlayerRemover DEFAULT = (server, player) -> {
         player.sendSystemMessage(Component.translatable("moonlightcore.message.dimension.remove.deleted", player.level().dimension().identifier()));
         ServerLevel level = server.getLevel(player.level().getRespawnData().dimension());
         if (level != null && level != player.level()) {

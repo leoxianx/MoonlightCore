@@ -2,7 +2,7 @@ package de.leoxian.moonlightcore.internal.common.server.dimension;
 
 import de.leoxian.moonlightcore.common.network.PacketDistributor;
 import de.leoxian.moonlightcore.common.server.dimension.DynamicDimensionRegistry;
-import de.leoxian.moonlightcore.common.server.dimension.PlayerRemover;
+import de.leoxian.moonlightcore.common.server.dimension.DimensionPlayerRemover;
 import de.leoxian.moonlightcore.common.util.DynamicRegistryUtils;
 import de.leoxian.moonlightcore.internal.common.network.s2c.S2CCreateDimension;
 import de.leoxian.moonlightcore.mixin.accessor.ChunkMapAccessor;
@@ -80,12 +80,12 @@ public class DynamicDimensionRegistryImpl implements DynamicDimensionRegistry {
     }
 
     @Override
-    public void unloadDynamicDimension(ServerLevel level, @Nullable PlayerRemover playerRemover) {
+    public void unloadDynamicDimension(ServerLevel level, @Nullable DimensionPlayerRemover playerRemover) {
         this.dynamicDimensionProvider.moonlightcore$removeLevel(level.dimension(), playerRemover, false);
     }
 
     @Override
-    public void deleteDynamicDimension(ServerLevel level, @Nullable PlayerRemover playerRemover) {
+    public void deleteDynamicDimension(ServerLevel level, @Nullable DimensionPlayerRemover playerRemover) {
         this.dynamicDimensionProvider.moonlightcore$removeLevel(level.dimension(), playerRemover, true);
     }
 

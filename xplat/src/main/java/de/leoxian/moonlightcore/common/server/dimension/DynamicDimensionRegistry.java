@@ -20,9 +20,9 @@ public interface DynamicDimensionRegistry {
 
     ServerLevel createDynamicDimension(Identifier id, ChunkGenerator chunkGenerator, DimensionType dimensionType);
 
-    void unloadDynamicDimension(ServerLevel level, @Nullable PlayerRemover playerRemover);
+    void unloadDynamicDimension(ServerLevel level, @Nullable DimensionPlayerRemover playerRemover);
 
-    void deleteDynamicDimension(ServerLevel level, @Nullable PlayerRemover playerRemover);
+    void deleteDynamicDimension(ServerLevel level, @Nullable DimensionPlayerRemover playerRemover);
 
     boolean anyDimensionExists(Identifier identifier);
 

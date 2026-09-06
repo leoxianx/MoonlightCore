@@ -11,9 +11,9 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 @Mod(value = "moonlightcore")
 public class MoonlightCoreNeoforgeMod {
     public MoonlightCoreNeoforgeMod(IEventBus eventBus, ModContainer container) {
+        ModEntrypoint.init("moonlightcore", InternalMod::initialize);
         ModDeferredRegisters.register("moonlightcore", eventBus);
         ModEventBuses.registerEventBus("moonlightcore", eventBus);
-        ModEntrypoint.init("moonlightcore", InternalMod::initialize);
 
         eventBus.addListener(this::onCommonSetup);
     }
