@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.serialization.MapCodec;
 import de.leoxian.moonlightcore.client.color.BlockColorRegistrar;
 import de.leoxian.moonlightcore.client.command.ClientCommandsContext;
+import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandler;
 import de.leoxian.moonlightcore.client.gui.GuiLayer;
 import de.leoxian.moonlightcore.client.gui.GuiLayerRegistrar;
 import de.leoxian.moonlightcore.client.keymapping.KeyMappingRegistrar;
@@ -43,6 +44,7 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
@@ -70,6 +72,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.Fluid;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -83,6 +86,16 @@ public class FabricClientAbstractionImpl implements XplatClientAbstraction {
         } catch (Throwable e) {
             throw new RuntimeException("Failed to initialize client mod '" + modId + "'", e);
         }
+    }
+
+    @Override
+    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model, ClientFluidRenderHandler handler) {
+
+    }
+
+    @Override
+    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model) {
+
     }
 
     @Override

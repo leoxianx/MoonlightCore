@@ -12,6 +12,8 @@ import de.leoxian.moonlightcore.common.capability.item.ItemCapability;
 import de.leoxian.moonlightcore.common.command.ArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.common.command.CommandRegistrarContext;
 import de.leoxian.moonlightcore.common.entity.EntityAttributeRegistrar;
+import de.leoxian.moonlightcore.common.fluid.BaseFlowingFluid;
+import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
 import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.common.pack.DataPackRegistryRegistrar;
@@ -64,6 +66,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.Fluid;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -86,6 +90,11 @@ public class FabricAbstractionImpl implements XplatAbstraction {
         } catch (Throwable throwable) {
             throw new RuntimeException("Failed to initialize mod '" + modId + "'", throwable);
         }
+    }
+
+    @Override
+    public <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, BaseFlowingFluid.Source sourceFluidHandler, BaseFlowingFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
+        return null;
     }
 
     @Override
