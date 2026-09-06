@@ -20,8 +20,8 @@ spotless {
 
 publishMods {
     def changelogFile = rootProject.file("changelog.md")
-    displayName = "${modVersion} ${modVersionType}"
-    version = "${modVersion}"
+    displayName = "MoonlightCore ${modVersion}-${modVersionType}"
+    version = "${modVersion}-${modVersionType}"
     changelog = changelogFile.exists() ? changelogFile.text : ""
     if (modVersionType.equalsIgnoreCase("alpha")) {
         type = ALPHA
