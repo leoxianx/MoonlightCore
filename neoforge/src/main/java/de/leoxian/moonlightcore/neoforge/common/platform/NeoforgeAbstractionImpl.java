@@ -9,8 +9,8 @@ import de.leoxian.moonlightcore.common.capability.item.ItemCapability;
 import de.leoxian.moonlightcore.common.command.ArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.common.command.CommandRegistrarContext;
 import de.leoxian.moonlightcore.common.entity.EntityAttributeRegistrar;
-import de.leoxian.moonlightcore.common.fluid.BaseFlowingFluid;
 import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
+import de.leoxian.moonlightcore.common.fluid.MoonlightFluid;
 import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.common.pack.DataPackRegistryRegistrar;
@@ -27,7 +27,7 @@ import de.leoxian.moonlightcore.neoforge.common.capability.NeoforgeCapabilityReg
 import de.leoxian.moonlightcore.neoforge.common.command.NeoforgeArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.neoforge.common.command.NeoforgeCommandRegistrarContext;
 import de.leoxian.moonlightcore.neoforge.common.entity.NeoforgeEntityAttributeRegistrar;
-import de.leoxian.moonlightcore.neoforge.common.fluid.NeoforgeFluidPropertiesHandlerWrapper;
+import de.leoxian.moonlightcore.neoforge.common.fluid.NeoforgeFluidTypeWrapper;
 import de.leoxian.moonlightcore.neoforge.common.fluid.NeoforgeFluidWrapper;
 import de.leoxian.moonlightcore.neoforge.common.network.NeoforgeServerNetworkHandler;
 import de.leoxian.moonlightcore.neoforge.common.pack.NeoforgeDataPackRegistryRegistrar;
@@ -54,12 +54,12 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
@@ -103,31 +103,33 @@ public class NeoforgeAbstractionImpl implements XplatAbstraction {
     }
 
     @Override
-    public <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, BaseFlowingFluid.Source sourceFluidHandler, BaseFlowingFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
-        String namespace = id.getNamespace();
-        String path = id.getPath();
+    public <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, MoonlightFluid.Source sourceFluidHandler, MoonlightFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
+        Supplier<? extends Fluid> sourceGetter  = () -> BuiltInRegistries.FLUID.getValue(id);
+        Supplier<? extends Fluid> flowingGetter = () -> BuiltInRegistries.FLUID.getValue(id.withPath(s -> s + "_flowing"));
+        Supplier<? extends LiquidBlock> blockGetter = () -> (LiquidBlock) BuiltInRegistries.BLOCK.getValue(id);
+        Supplier<? extends Item> bucketGetter = () -> BuiltInRegistries.ITEM.getValue(id.withPath(s -> s + "_bucket"));
 
-        Supplier<? extends Fluid> sourceFluidSupplier = () -> BuiltInRegistries.FLUID.getValue(id);
-        Supplier<? extends Fluid> flowingFluidSupplier = () -> BuiltInRegistries.FLUID.getValue(id.withPath(s -> s + "_flowing"));
-        Supplier<? extends Item> bucketItemSupplier = () -> BuiltInRegistries.ITEM.getValue(id.withPath(s -> s + "_bucket"));
-
-        Supplier<FluidType> fluidType = ModDeferredRegisters.get(NeoForgeRegistries.FLUID_TYPES, namespace)
-                .register(path, () -> new NeoforgeFluidPropertiesHandlerWrapper(propertiesHandler));
-        ModDeferredRegisters.get(Registries.FLUID, namespace)
-                .register(path, () -> new NeoforgeFluidWrapper(sourceFluidHandler, sourceFluidSupplier, flowingFluidSupplier, bucketItemSupplier, fluidType));
-        ModDeferredRegisters.get(Registries.FLUID, namespace)
-                .register(path + "_flowing", () -> new NeoforgeFluidWrapper(flowingFluidHandler, sourceFluidSupplier, flowingFluidSupplier, bucketItemSupplier, fluidType));
-        ModDeferredRegisters.get(Registries.BLOCK, namespace)
-                .register(path, () -> new LiquidBlock(
-                        (FlowingFluid) flowingFluidSupplier.get(), BlockBehaviour.Properties.ofFullCopy(Blocks.WATER)
+        Supplier<FluidType> fluidType = ModDeferredRegisters.get(NeoForgeRegistries.FLUID_TYPES, id.getNamespace())
+                .register(id.getPath(), () -> new NeoforgeFluidTypeWrapper(propertiesHandler));
+        net.neoforged.neoforge.registries.DeferredHolder<Fluid, NeoforgeFluidWrapper> sourceFluid = ModDeferredRegisters.get(Registries.FLUID, id.getNamespace())
+                .register(id.getPath(), () -> new NeoforgeFluidWrapper.Source(fluidType, sourceGetter, flowingGetter, bucketGetter, blockGetter, sourceFluidHandler));
+        net.neoforged.neoforge.registries.DeferredHolder<Fluid, NeoforgeFluidWrapper> flowingFluid =  ModDeferredRegisters.get(Registries.FLUID, id.getNamespace())
+                .register(id.getPath() + "_flowing", () -> new NeoforgeFluidWrapper.Flowing(fluidType, sourceGetter, flowingGetter, bucketGetter, blockGetter, sourceFluidHandler));
+        ModDeferredRegisters.get(Registries.BLOCK, id.getNamespace())
+                .register(id.getPath(), k -> new LiquidBlock(flowingFluid.get(), BlockBehaviour.Properties.of()
+                        .setId(ResourceKey.create(Registries.BLOCK, k))
+                        .replaceable()
+                        .noCollision()
+                        .strength(100.0F)
+                        .pushReaction(PushReaction.DESTROY)
                         .noLootTable()
                         .liquid()
-                        .setId(ResourceKey.create(Registries.BLOCK, id))));
-        ModDeferredRegisters.get(Registries.ITEM, namespace)
-                .register(path + "_bucket", () -> new BucketItem(sourceFluidSupplier.get(), new Item.Properties()
+                        .sound(SoundType.EMPTY)));
+        ModDeferredRegisters.get(Registries.ITEM, id.getNamespace())
+                .register(id.getPath() + "_bucket", k -> new BucketItem(sourceFluid.get(), new Item.Properties()
+                        .setId(ResourceKey.create(Registries.ITEM, k))
                         .craftRemainder(Items.BUCKET)
-                        .stacksTo(1)
-                        .setId(ResourceKey.create(Registries.ITEM, id.withPath(s -> s + "_bucket")))));
+                        .stacksTo(1)));
         return DeferredHolder.create(ResourceKey.create(Registries.FLUID, id));
     }
 

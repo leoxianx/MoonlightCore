@@ -24,17 +24,20 @@ import de.leoxian.moonlightcore.client.render.EntityRendererRegistrar;
 import de.leoxian.moonlightcore.client.render.RenderPipelineRegistrar;
 import de.leoxian.moonlightcore.common.ClientModEntrypoint;
 import de.leoxian.moonlightcore.fabric.client.event.ClientEventHooks;
+import de.leoxian.moonlightcore.fabric.client.fluid.FluidRenderHandler;
 import de.leoxian.moonlightcore.fabric.client.gui.FabricGuiLayer;
 import de.leoxian.moonlightcore.fabric.client.network.FabricClientConfigurationNetworkingContext;
 import de.leoxian.moonlightcore.fabric.client.network.FabricClientPlayNetworkingContext;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockColorRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
+import net.fabricmc.fabric.api.transfer.v1.client.fluid.FluidVariantRendering;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -90,12 +93,13 @@ public class FabricClientAbstractionImpl implements XplatClientAbstraction {
 
     @Override
     public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model, ClientFluidRenderHandler handler) {
-
+        FluidVariantRendering.register(fluid.get(), new FluidRenderHandler(handler));
+        FluidRenderingRegistry.register(fluid.get(), model);
     }
 
     @Override
     public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model) {
-
+        FluidRenderingRegistry.register(fluid.get(), model);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package de.leoxian.moonlightcore.common.platform;
 
-import de.leoxian.moonlightcore.common.fluid.BaseFlowingFluid;
 import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
+import de.leoxian.moonlightcore.common.fluid.MoonlightFluid;
 import de.leoxian.moonlightcore.common.registry.DeferredHolder;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.file.Path;
 import java.util.function.Supplier;
@@ -18,7 +19,8 @@ public final class Platform {
         return XplatAbstraction.INSTANCE.createSoundType(volume, pitch, breakSound, stepSound, placeSound, hitSound, fallSound);
     }
 
-    public static <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, BaseFlowingFluid.Source sourceFluidHandler, BaseFlowingFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
+    @ApiStatus.Experimental
+    public static <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, MoonlightFluid.Source sourceFluidHandler, MoonlightFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
         return XplatAbstraction.INSTANCE.registerFluid(id, sourceFluidHandler, flowingFluidHandler, propertiesHandler);
     }
 

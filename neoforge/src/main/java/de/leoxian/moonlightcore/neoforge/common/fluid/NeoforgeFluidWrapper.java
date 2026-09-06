@@ -1,63 +1,51 @@
 package de.leoxian.moonlightcore.neoforge.common.fluid;
 
-import de.leoxian.moonlightcore.common.fluid.BaseFlowingFluid;
+import de.leoxian.moonlightcore.common.fluid.MoonlightFluid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.entity.EntityFluidInteraction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
-import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-public class NeoforgeFluidWrapper extends FlowingFluid {
-    protected final BaseFlowingFluid delegate;
-    protected final Supplier<? extends Fluid> sourceSupplier;
-    protected final Supplier<? extends Fluid> flowingSupplier;
-    protected final Supplier<? extends Item> bucketItem;
-    protected final Supplier<FluidType> fluidTypeSupplier;
+public abstract class NeoforgeFluidWrapper extends BaseFlowingFluid {
+    protected final MoonlightFluid delegate;
 
-    public NeoforgeFluidWrapper(BaseFlowingFluid delegate, Supplier<? extends Fluid> sourceSupplier, Supplier<? extends Fluid> flowingSupplier, Supplier<? extends Item> bucketItem, Supplier<FluidType> fluidTypeSupplier) {
+    public NeoforgeFluidWrapper(Supplier<FluidType> fluidType, Supplier<? extends Fluid> sourceGetter, Supplier<? extends Fluid> flowingGetter, Supplier<? extends Item> bucketItem, Supplier<? extends LiquidBlock> blockGetter, MoonlightFluid delegate) {
+        super(new Properties(fluidType, sourceGetter, flowingGetter)
+                .bucket(bucketItem)
+                .block(blockGetter)
+                .explosionResistance(delegate.explosionResistance)
+                .tickRate(delegate.tickRate)
+                .levelDecreasePerBlock(delegate.levelDecreasePerBlock)
+                .slopeFindDistance(delegate.slopeFindDistance));
         this.delegate = delegate;
-        this.sourceSupplier = sourceSupplier;
-        this.flowingSupplier = flowingSupplier;
-        this.bucketItem = bucketItem;
-        this.fluidTypeSupplier = fluidTypeSupplier;
+    }
 
-        if (delegate.isSource()) {
-            this.registerDefaultState(this.getStateDefinition().any().setValue(FALLING, false));
-        } else {
-            this.registerDefaultState(this.getStateDefinition().any().setValue(LEVEL, 7).setValue(FALLING, false));
+    @Override
+    protected boolean canBeReplacedWith(FluidState state, BlockGetter level, BlockPos pos, Fluid fluid, Direction direction) {
+        if (direction == Direction.DOWN) {
+            return !isSame(fluid);
         }
+        return fluid.isSame(this) || state.isEmpty() || level.getBlockState(pos).canBeReplaced();
     }
 
     @Override
-    public FluidType getFluidType() {
-        return this.fluidTypeSupplier.get();
-    }
-
-    @Override
-    protected void animateTick(Level level, BlockPos pos, FluidState fluidState, RandomSource random) {
-        super.animateTick(level, pos, fluidState, random);
-        this.delegate.animateTick(level, pos, fluidState, random);
+    public boolean isSame(Fluid fluid) {
+        return fluid == getSource() || fluid == getFlowing();
     }
 
     @Override
@@ -73,94 +61,56 @@ public class NeoforgeFluidWrapper extends FlowingFluid {
     }
 
     @Override
-    protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
-        super.entityInside(level, pos, entity, effectApplier);
-        this.delegate.entityInside(level, pos, entity, effectApplier);
+    protected void animateTick(Level level, BlockPos pos, FluidState fluidState, RandomSource random) {
+        super.animateTick(level, pos, fluidState, random);
+        this.delegate.animateTick(level, pos, fluidState, random);
     }
 
     @Override
-    protected @Nullable ParticleOptions getDripParticle() {
-        return this.delegate.getDripParticle();
+    protected boolean isRandomlyTicking() {
+        return this.delegate.isRandomlyTicking();
     }
 
     @Override
-    protected void createFluidStateDefinition(StateDefinition.Builder<Fluid, FluidState> builder) {
-        builder.add(LEVEL, FALLING);
+    protected void beforeDestroyingBlock(LevelAccessor worldIn, BlockPos pos, BlockState state) {
+        this.delegate.beforeDestroyingBlock(worldIn, pos, state);
     }
 
-    @Override
-    public Fluid getSource() {
-        return this.sourceSupplier.get();
-    }
-
-    @Override
-    public boolean isSame(Fluid other) {
-        return other == this || other == getSource() || other == getFlowing() || this.delegate.isSame(other);
-    }
-
-    @Override
-    protected boolean canConvertToSource(ServerLevel serverLevel) {
-        return this.delegate.canConvertToSource(serverLevel);
-    }
-
-    @Override
-    protected void beforeDestroyingBlock(LevelAccessor levelAccessor, BlockPos blockPos, BlockState blockState) {
-        this.delegate.beforeDestroyingBlock(levelAccessor, blockPos, blockState);
-    }
-
-    @Override
-    protected int getSlopeFindDistance(LevelReader levelReader) {
-        return this.delegate.getSlopeFindDistance(levelReader);
-    }
-
-    @Override
-    protected int getDropOff(LevelReader levelReader) {
-        return this.delegate.getDropOff(levelReader);
-    }
-
-    @Override
-    public int getAmount(FluidState fluidState) {
-        return this.delegate.getAmount(fluidState);
-    }
-
-    @Override
-    public Fluid getFlowing() {
-        return this.flowingSupplier.get();
-    }
-
-    @Override
-    public Item getBucket() {
-        return this.bucketItem.get();
-    }
-
-    @Override
-    protected boolean canBeReplacedWith(FluidState fluidState, BlockGetter blockGetter, BlockPos blockPos, Fluid fluid, Direction direction) {
-        return this.delegate.canBeReplacedWith(fluidState, blockGetter, blockPos, fluid, direction);
-    }
-
-    @Override
-    public int getTickDelay(LevelReader levelReader) {
-        return this.delegate.getTickDelay(levelReader);
-    }
-
-    @Override
-    protected float getExplosionResistance() {
-        return this.delegate.getExplosionResistance();
-    }
-
-    @Override
-    protected BlockState createLegacyBlock(FluidState fluidState) {
-        Identifier fluidId = BuiltInRegistries.FLUID.getKey(this.getSource());
-        Block block = BuiltInRegistries.BLOCK.getValue(fluidId);
-
-        if (block != Blocks.AIR) {
-            return block.defaultBlockState().setValue(LiquidBlock.LEVEL, getLegacyLevel(fluidState));
+    public static class Source extends NeoforgeFluidWrapper {
+        public Source(Supplier<FluidType> fluidType, Supplier<? extends Fluid> sourceGetter, Supplier<? extends Fluid> flowingGetter, Supplier<? extends Item> bucketItem, Supplier<? extends LiquidBlock> blockGetter, MoonlightFluid delegate) {
+            super(fluidType, sourceGetter, flowingGetter, bucketItem, blockGetter, delegate);
         }
-        return Blocks.AIR.defaultBlockState();
+
+        @Override
+        public boolean isSource(FluidState fluidState) {
+            return true;
+        }
+
+        @Override
+        public int getAmount(FluidState fluidState) {
+            return 8;
+        }
     }
 
-    @Override
-    public boolean isSource(FluidState fluidState) {
-        return this.delegate.isSource();
+    public static class Flowing extends NeoforgeFluidWrapper {
+        public Flowing(Supplier<FluidType> fluidType, Supplier<? extends Fluid> sourceGetter, Supplier<? extends Fluid> flowingGetter, Supplier<? extends Item> bucketItem, Supplier<? extends LiquidBlock> blockGetter, MoonlightFluid delegate) {
+            super(fluidType, sourceGetter, flowingGetter, bucketItem, blockGetter, delegate);
+        }
+
+        @Override
+        protected void createFluidStateDefinition(StateDefinition.Builder<Fluid, FluidState> builder) {
+            super.createFluidStateDefinition(builder);
+            builder.add(FlowingFluid.LEVEL);
+        }
+
+        @Override
+        public boolean isSource(FluidState fluidState) {
+            return false;
+        }
+
+        @Override
+        public int getAmount(FluidState fluidState) {
+            return fluidState.getValue(FlowingFluid.LEVEL);
+        }
     }
 }

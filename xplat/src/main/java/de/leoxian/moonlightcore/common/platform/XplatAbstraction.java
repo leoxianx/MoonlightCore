@@ -9,8 +9,8 @@ import de.leoxian.moonlightcore.common.capability.item.ItemCapability;
 import de.leoxian.moonlightcore.common.command.ArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.common.command.CommandRegistrarContext;
 import de.leoxian.moonlightcore.common.entity.EntityAttributeRegistrar;
-import de.leoxian.moonlightcore.common.fluid.BaseFlowingFluid;
 import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
+import de.leoxian.moonlightcore.common.fluid.MoonlightFluid;
 import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.common.pack.DataPackRegistryRegistrar;
@@ -52,7 +52,8 @@ public interface XplatAbstraction {
 
     // |-----| Fluids |-----|
 
-    <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, BaseFlowingFluid.Source sourceFluidHandler, BaseFlowingFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler);
+    @ApiStatus.Experimental
+    <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, MoonlightFluid.Source sourceFluidHandler, MoonlightFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler);
 
     // |-----| Registrars |-----|
     void entityAttributes(String namespace, Consumer<EntityAttributeRegistrar> initializer);
