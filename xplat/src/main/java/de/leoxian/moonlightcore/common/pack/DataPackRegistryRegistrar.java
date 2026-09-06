@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.function.Consumer;
 
 public interface DataPackRegistryRegistrar {
-    static void create(String namespace, Consumer<DataPackRegistryRegistrar> initializer) {
+    static void init(String namespace, Consumer<DataPackRegistryRegistrar> initializer) {
         XplatAbstraction.INSTANCE.datapackRegistries(namespace, initializer);
     }
 
