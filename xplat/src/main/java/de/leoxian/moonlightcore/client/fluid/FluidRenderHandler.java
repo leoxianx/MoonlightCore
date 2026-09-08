@@ -1,6 +1,7 @@
 package de.leoxian.moonlightcore.client.fluid;
 
 import de.leoxian.moonlightcore.common.transfer.fluid.FluidResource;
+import jdk.jfr.Experimental;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.FluidModel;
@@ -13,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
+@Experimental
 public interface FluidRenderHandler {
     FluidRenderHandler DEFAULT = new FluidRenderHandler() {};
 

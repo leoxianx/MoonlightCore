@@ -1,12 +1,14 @@
 package de.leoxian.moonlightcore.client.fluid;
 
 import de.leoxian.moonlightcore.client.platform.XplatClientAbstraction;
+import jdk.jfr.Experimental;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.material.Fluid;
 
 import java.util.function.Consumer;
 
+@Experimental
 public interface FluidRendererRegistrar {
     static void init(String namespace, Consumer<FluidRendererRegistrar> initializer) {
         XplatClientAbstraction.INSTANCE.fluidRenderer(namespace, initializer);

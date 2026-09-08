@@ -7,9 +7,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.BiPredicate;
 
+@ApiStatus.Experimental
 public interface FluidBehavior {
     FluidBehavior DEFAULT = SimpleFluidBehavior.DEFAULT;
     FluidBehavior WATER_LIKE = SimpleFluidBehavior.WATER_LIKE;

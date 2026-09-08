@@ -3,9 +3,12 @@ package de.leoxian.moonlightcore.common.fluid;
 import de.leoxian.moonlightcore.common.platform.XplatAbstraction;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Consumer;
 
+@ApiStatus.Experimental
+@ApiStatus.NonExtendable
 public interface FluidRegistrar {
     static void init(String namespace, Consumer<FluidRegistrar> initializer) {
         XplatAbstraction.INSTANCE.fluids(namespace, initializer);

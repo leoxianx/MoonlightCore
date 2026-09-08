@@ -8,9 +8,11 @@ import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Optional;
 
+@ApiStatus.Experimental
 public interface FluidAttributesHandler {
     FluidAttributesHandler DEFAULT = new FluidAttributesHandler() {};
 
