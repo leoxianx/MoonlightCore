@@ -5,7 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.serialization.MapCodec;
 import de.leoxian.moonlightcore.client.color.BlockColorRegistrar;
 import de.leoxian.moonlightcore.client.command.ClientCommandsContext;
-import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandler;
+import de.leoxian.moonlightcore.client.fluid.FluidRendererRegistrar;
 import de.leoxian.moonlightcore.client.gui.GuiLayer;
 import de.leoxian.moonlightcore.client.gui.GuiLayerRegistrar;
 import de.leoxian.moonlightcore.client.keymapping.KeyMappingRegistrar;
@@ -24,7 +24,7 @@ import de.leoxian.moonlightcore.client.render.EntityRendererRegistrar;
 import de.leoxian.moonlightcore.client.render.RenderPipelineRegistrar;
 import de.leoxian.moonlightcore.common.ClientModEntrypoint;
 import de.leoxian.moonlightcore.fabric.client.event.ClientEventHooks;
-import de.leoxian.moonlightcore.fabric.client.fluid.FluidRenderHandler;
+import de.leoxian.moonlightcore.fabric.client.fluid.FabricFluidRendererRegistrar;
 import de.leoxian.moonlightcore.fabric.client.gui.FabricGuiLayer;
 import de.leoxian.moonlightcore.fabric.client.network.FabricClientConfigurationNetworkingContext;
 import de.leoxian.moonlightcore.fabric.client.network.FabricClientPlayNetworkingContext;
@@ -92,14 +92,8 @@ public class FabricClientAbstractionImpl implements XplatClientAbstraction {
     }
 
     @Override
-    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model, ClientFluidRenderHandler handler) {
-        FluidVariantRendering.register(fluid.get(), new FluidRenderHandler(handler));
-        FluidRenderingRegistry.register(fluid.get(), model);
-    }
-
-    @Override
-    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model) {
-        FluidRenderingRegistry.register(fluid.get(), model);
+    public void fluidRenderer(String namespace, Consumer<FluidRendererRegistrar> initializer) {
+        initializer.accept(new FabricFluidRendererRegistrar());
     }
 
     @Override

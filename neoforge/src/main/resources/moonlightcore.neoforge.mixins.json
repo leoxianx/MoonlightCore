@@ -4,7 +4,6 @@
   "package": "de.leoxian.moonlightcore.neoforge.common.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "LivingEntityAccessor",
     "event.ServerPlayerMixin"
   ],
   "injectors": {

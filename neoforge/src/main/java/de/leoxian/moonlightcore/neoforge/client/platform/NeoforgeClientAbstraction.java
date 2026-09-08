@@ -2,7 +2,7 @@ package de.leoxian.moonlightcore.neoforge.client.platform;
 
 import de.leoxian.moonlightcore.client.color.BlockColorRegistrar;
 import de.leoxian.moonlightcore.client.command.ClientCommandsContext;
-import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandler;
+import de.leoxian.moonlightcore.client.fluid.FluidRendererRegistrar;
 import de.leoxian.moonlightcore.client.gui.GuiLayerRegistrar;
 import de.leoxian.moonlightcore.client.keymapping.KeyMappingRegistrar;
 import de.leoxian.moonlightcore.client.menu.MenuScreenRegistrar;
@@ -20,7 +20,7 @@ import de.leoxian.moonlightcore.client.render.RenderPipelineRegistrar;
 import de.leoxian.moonlightcore.common.ClientModEntrypoint;
 import de.leoxian.moonlightcore.neoforge.client.color.NeoforgeBlockColorRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.command.NeoforgeClientCommandsContext;
-import de.leoxian.moonlightcore.neoforge.client.fluid.NeoforgeClientFluidRenderHandlerWrapper;
+import de.leoxian.moonlightcore.neoforge.client.fluid.NeoforgeFluidRendererRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.gui.NeoforgeGuiLayerRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.keymapping.NeoforgeKeyMappingRegistrar;
 import de.leoxian.moonlightcore.neoforge.client.menu.NeoforgeMenuScreenRegistrar;
@@ -54,9 +54,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class NeoforgeClientAbstraction implements XplatClientAbstraction {
-    public record FluidModelRegistration(Supplier<Fluid> fluidSupplier, FluidModel.Unbaked model, @Nullable NeoforgeClientFluidRenderHandlerWrapper handler) {}
-    private static final Map<Supplier<Fluid>, FluidModelRegistration> FLUID_RENDER_HANDLERS = new HashMap<>();
-
     @Override
     public void initializeClientMod(String modId, ClientModEntrypoint entrypoint) {
         try {
@@ -67,13 +64,8 @@ public class NeoforgeClientAbstraction implements XplatClientAbstraction {
     }
 
     @Override
-    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model) {
-        registerFluidModel(fluid, model, null);
-    }
-
-    @Override
-    public void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model, ClientFluidRenderHandler handler) {
-        FLUID_RENDER_HANDLERS.put(fluid, new FluidModelRegistration(fluid, model, new NeoforgeClientFluidRenderHandlerWrapper(fluid)));
+    public void fluidRenderer(String namespace, Consumer<FluidRendererRegistrar> initializer) {
+        initializer.accept(ModEventBuses.registerListener(namespace, NeoforgeFluidRendererRegistrar.class));
     }
 
     @Override
@@ -200,10 +192,5 @@ public class NeoforgeClientAbstraction implements XplatClientAbstraction {
     @Override
     public void initialize() {
 
-    }
-
-    @UnmodifiableView
-    public static Map<Supplier<Fluid>, FluidModelRegistration> getFluidRenderHandlers() {
-        return Collections.unmodifiableMap(FLUID_RENDER_HANDLERS);
     }
 }

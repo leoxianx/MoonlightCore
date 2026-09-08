@@ -7,7 +7,6 @@
     "CameraMixin",
     "FogRendererMixin",
     "KeyboardHandlerMixin",
-    "LivingEntityRendererMixin",
     "MouseHandlerMixin"
   ],
   "injectors": {

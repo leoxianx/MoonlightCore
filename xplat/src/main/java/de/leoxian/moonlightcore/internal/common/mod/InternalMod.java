@@ -7,7 +7,6 @@ import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.internal.common.network.c2s.C2SAcceptedValidConfigs;
 import de.leoxian.moonlightcore.internal.common.network.s2c.S2CRequestValidConfigsPacket;
 import de.leoxian.moonlightcore.internal.common.network.task.RequestValidConfigsTask;
-import de.leoxian.moonlightcore.internal.common.test.fluid.SlimeFluidTest;
 
 public class InternalMod {
     public static void initialize() {
@@ -19,6 +18,5 @@ public class InternalMod {
                 ServerConfigurationNetworking.addTask("moonlightcore", packetListener, new RequestValidConfigsTask(packetListener));
             }
         });
-        SlimeFluidTest.init();
     }
 }

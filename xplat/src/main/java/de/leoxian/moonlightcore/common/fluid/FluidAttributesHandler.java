@@ -5,15 +5,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Util;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Optional;
 
-@ApiStatus.Experimental
-public interface FluidPropertiesHandler {
-    FluidPropertiesHandler DEFAULT = new FluidPropertiesHandler() {};
+public interface FluidAttributesHandler {
+    FluidAttributesHandler DEFAULT = new FluidAttributesHandler() {};
 
     default Component getName(FluidResource resource) {
         Block fluidBlock = resource.fluid().defaultFluidState().createLegacyBlock().getBlock();
@@ -23,14 +22,6 @@ public interface FluidPropertiesHandler {
         } else {
             return fluidBlock.getName();
         }
-    }
-
-    default boolean canDrown() {
-        return true;
-    }
-
-    default boolean canSwim() {
-        return true;
     }
 
     default int getAssociatedColor(FluidResource resource) {
@@ -49,6 +40,10 @@ public interface FluidPropertiesHandler {
         return Optional.empty();
     }
 
+    default float getFallDistanceModifier(Entity entity) {
+        return 0.0F;
+    }
+
     default int getLightEmission(FluidResource resource) {
         return resource.fluid().defaultFluidState().createLegacyBlock().getLightEmission();
     }
@@ -59,9 +54,5 @@ public interface FluidPropertiesHandler {
 
     default int getViscosity(FluidResource resource) {
         return 1000;
-    }
-
-    default boolean isWaterLike() {
-        return false;
     }
 }

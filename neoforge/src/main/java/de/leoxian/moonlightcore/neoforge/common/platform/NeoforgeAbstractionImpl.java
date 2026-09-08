@@ -9,8 +9,7 @@ import de.leoxian.moonlightcore.common.capability.item.ItemCapability;
 import de.leoxian.moonlightcore.common.command.ArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.common.command.CommandRegistrarContext;
 import de.leoxian.moonlightcore.common.entity.EntityAttributeRegistrar;
-import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
-import de.leoxian.moonlightcore.common.fluid.MoonlightFluid;
+import de.leoxian.moonlightcore.common.fluid.FluidRegistrar;
 import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.common.pack.DataPackRegistryRegistrar;
@@ -27,8 +26,7 @@ import de.leoxian.moonlightcore.neoforge.common.capability.NeoforgeCapabilityReg
 import de.leoxian.moonlightcore.neoforge.common.command.NeoforgeArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.neoforge.common.command.NeoforgeCommandRegistrarContext;
 import de.leoxian.moonlightcore.neoforge.common.entity.NeoforgeEntityAttributeRegistrar;
-import de.leoxian.moonlightcore.neoforge.common.fluid.NeoforgeFluidTypeWrapper;
-import de.leoxian.moonlightcore.neoforge.common.fluid.NeoforgeFluidWrapper;
+import de.leoxian.moonlightcore.neoforge.common.fluid.NeoforgeFluidRegistrar;
 import de.leoxian.moonlightcore.neoforge.common.network.NeoforgeServerNetworkHandler;
 import de.leoxian.moonlightcore.neoforge.common.pack.NeoforgeDataPackRegistryRegistrar;
 import de.leoxian.moonlightcore.neoforge.common.pack.NeoforgeResourceReloadListenerRegistrar;
@@ -37,8 +35,6 @@ import de.leoxian.moonlightcore.neoforge.common.resource.NeoforgeModResources;
 import de.leoxian.moonlightcore.neoforge.common.server.permission.NeoforgePermissionsHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -51,15 +47,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.FlowingFluid;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
@@ -68,8 +56,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.DeferredSoundType;
 import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.neoforged.neoforgespi.language.IModFileInfo;
 import org.jspecify.annotations.Nullable;
@@ -103,34 +89,8 @@ public class NeoforgeAbstractionImpl implements XplatAbstraction {
     }
 
     @Override
-    public <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, MoonlightFluid.Source sourceFluidHandler, MoonlightFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
-        Supplier<? extends Fluid> sourceGetter  = () -> BuiltInRegistries.FLUID.getValue(id);
-        Supplier<? extends Fluid> flowingGetter = () -> BuiltInRegistries.FLUID.getValue(id.withPath(s -> s + "_flowing"));
-        Supplier<? extends LiquidBlock> blockGetter = () -> (LiquidBlock) BuiltInRegistries.BLOCK.getValue(id);
-        Supplier<? extends Item> bucketGetter = () -> BuiltInRegistries.ITEM.getValue(id.withPath(s -> s + "_bucket"));
-
-        Supplier<FluidType> fluidType = ModDeferredRegisters.get(NeoForgeRegistries.FLUID_TYPES, id.getNamespace())
-                .register(id.getPath(), () -> new NeoforgeFluidTypeWrapper(propertiesHandler));
-        net.neoforged.neoforge.registries.DeferredHolder<Fluid, NeoforgeFluidWrapper> sourceFluid = ModDeferredRegisters.get(Registries.FLUID, id.getNamespace())
-                .register(id.getPath(), () -> new NeoforgeFluidWrapper.Source(fluidType, sourceGetter, flowingGetter, bucketGetter, blockGetter, sourceFluidHandler));
-        net.neoforged.neoforge.registries.DeferredHolder<Fluid, NeoforgeFluidWrapper> flowingFluid =  ModDeferredRegisters.get(Registries.FLUID, id.getNamespace())
-                .register(id.getPath() + "_flowing", () -> new NeoforgeFluidWrapper.Flowing(fluidType, sourceGetter, flowingGetter, bucketGetter, blockGetter, sourceFluidHandler));
-        ModDeferredRegisters.get(Registries.BLOCK, id.getNamespace())
-                .register(id.getPath(), k -> new LiquidBlock(flowingFluid.get(), BlockBehaviour.Properties.of()
-                        .setId(ResourceKey.create(Registries.BLOCK, k))
-                        .replaceable()
-                        .noCollision()
-                        .strength(100.0F)
-                        .pushReaction(PushReaction.DESTROY)
-                        .noLootTable()
-                        .liquid()
-                        .sound(SoundType.EMPTY)));
-        ModDeferredRegisters.get(Registries.ITEM, id.getNamespace())
-                .register(id.getPath() + "_bucket", k -> new BucketItem(sourceFluid.get(), new Item.Properties()
-                        .setId(ResourceKey.create(Registries.ITEM, k))
-                        .craftRemainder(Items.BUCKET)
-                        .stacksTo(1)));
-        return DeferredHolder.create(ResourceKey.create(Registries.FLUID, id));
+    public void fluids(String namespace, Consumer<FluidRegistrar> initializer) {
+        initializer.accept(new NeoforgeFluidRegistrar(namespace));
     }
 
     @Override

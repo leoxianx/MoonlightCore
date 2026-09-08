@@ -13,8 +13,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
-public interface ClientFluidRenderHandler {
-    ClientFluidRenderHandler DEFAULT = new ClientFluidRenderHandler() {};
+public interface FluidRenderHandler {
+    FluidRenderHandler DEFAULT = new FluidRenderHandler() {};
 
     default void appendTooltip(FluidResource resource, List<Component> tooltip, TooltipFlag tooltipFlag) {
 

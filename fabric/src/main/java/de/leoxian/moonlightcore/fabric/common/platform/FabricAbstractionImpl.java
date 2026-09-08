@@ -12,8 +12,7 @@ import de.leoxian.moonlightcore.common.capability.item.ItemCapability;
 import de.leoxian.moonlightcore.common.command.ArgumentTypeRegistrar;
 import de.leoxian.moonlightcore.common.command.CommandRegistrarContext;
 import de.leoxian.moonlightcore.common.entity.EntityAttributeRegistrar;
-import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
-import de.leoxian.moonlightcore.common.fluid.MoonlightFluid;
+import de.leoxian.moonlightcore.common.fluid.FluidRegistrar;
 import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.common.network.ServerPlayNetworking;
 import de.leoxian.moonlightcore.common.pack.DataPackRegistryRegistrar;
@@ -28,9 +27,8 @@ import de.leoxian.moonlightcore.fabric.common.capability.FabricBlockCapability;
 import de.leoxian.moonlightcore.fabric.common.capability.FabricBlockCapabilityCache;
 import de.leoxian.moonlightcore.fabric.common.capability.FabricEntityCapability;
 import de.leoxian.moonlightcore.fabric.common.capability.FabricItemCapability;
-import de.leoxian.moonlightcore.fabric.common.fluid.FabricFluidImpl;
-import de.leoxian.moonlightcore.fabric.common.fluid.FluidAttributeHandlerWrapper;
-import de.leoxian.moonlightcore.fabric.common.fluid.FluidPropertiesHandlers;
+import de.leoxian.moonlightcore.fabric.common.event.CommonEventHooks;
+import de.leoxian.moonlightcore.fabric.common.fluid.FabricFluidRegistrar;
 import de.leoxian.moonlightcore.fabric.common.network.FabricServerConfigurationNetworkingContext;
 import de.leoxian.moonlightcore.fabric.common.network.FabricServerPlayNetworkingContext;
 import de.leoxian.moonlightcore.fabric.common.registry.FabricRegistryBuilderImpl;
@@ -44,7 +42,6 @@ import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.resource.v1.DataResourceLoader;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributes;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -53,8 +50,6 @@ import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -71,15 +66,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.FlowingFluid;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.PushReaction;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
@@ -105,33 +92,8 @@ public class FabricAbstractionImpl implements XplatAbstraction {
     }
 
     @Override
-    public <T extends FlowingFluid> DeferredHolder<Fluid, T> registerFluid(Identifier id, MoonlightFluid.Source sourceFluidHandler, MoonlightFluid.Flowing flowingFluidHandler, FluidPropertiesHandler propertiesHandler) {
-        Supplier<? extends Fluid> sourceGetter  = () -> BuiltInRegistries.FLUID.getValue(id);
-        Supplier<? extends Fluid> flowingGetter = () -> BuiltInRegistries.FLUID.getValue(id.withPath(s -> s + "_flowing"));
-        Supplier<? extends LiquidBlock> blockGetter = () -> (LiquidBlock) BuiltInRegistries.BLOCK.getValue(id);
-        Supplier<? extends Item> bucketGetter = () -> BuiltInRegistries.ITEM.getValue(id.withPath(s -> s + "_bucket"));
-
-        FlowingFluid source = Registry.register(BuiltInRegistries.FLUID, id, new FabricFluidImpl.Source(flowingGetter, sourceGetter, bucketGetter, blockGetter, sourceFluidHandler));
-        FlowingFluid flowing = Registry.register(BuiltInRegistries.FLUID, id.withPath(s -> s + "_flowing"), new FabricFluidImpl.Flowing(flowingGetter, sourceGetter, bucketGetter, blockGetter, sourceFluidHandler));
-        Registry.register(BuiltInRegistries.ITEM,  id.withPath(s -> s + "_bucket"), new BucketItem(source, new Item.Properties()
-                .setId(ResourceKey.create(Registries.ITEM, id.withPath(s -> s + "_bucket")))
-                .craftRemainder(Items.BUCKET)
-                .stacksTo(1)));
-        Registry.register(BuiltInRegistries.BLOCK, id, new LiquidBlock(flowing, BlockBehaviour.Properties.of()
-                .setId(ResourceKey.create(Registries.BLOCK, id))
-                .replaceable()
-                .noCollision()
-                .strength(100.0F)
-                .pushReaction(PushReaction.DESTROY)
-                .noLootTable()
-                .liquid()
-                .sound(SoundType.EMPTY)));
-
-        FluidVariantAttributes.register(source, new FluidAttributeHandlerWrapper(propertiesHandler));
-        FluidVariantAttributes.register(flowing, new FluidAttributeHandlerWrapper(propertiesHandler));
-        FluidPropertiesHandlers.register(source, propertiesHandler);
-        FluidPropertiesHandlers.register(flowing, propertiesHandler);
-        return DeferredHolder.create(ResourceKey.create(Registries.FLUID, id));
+    public void fluids(String namespace, Consumer<FluidRegistrar> initializer) {
+        initializer.accept(new FabricFluidRegistrar(namespace));
     }
 
     @Override
@@ -337,6 +299,9 @@ public class FabricAbstractionImpl implements XplatAbstraction {
 
     @Override
     public void initialize() {
+
+//        CommonEventHooks.bindFabricApiEvents();
+
         ServerLifecycleEvents.SERVER_STARTING.register(currentServer::set);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> currentServer.set(null));
     }

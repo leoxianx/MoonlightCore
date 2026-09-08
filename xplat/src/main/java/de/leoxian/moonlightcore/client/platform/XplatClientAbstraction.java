@@ -2,7 +2,7 @@ package de.leoxian.moonlightcore.client.platform;
 
 import de.leoxian.moonlightcore.client.color.BlockColorRegistrar;
 import de.leoxian.moonlightcore.client.command.ClientCommandsContext;
-import de.leoxian.moonlightcore.client.fluid.ClientFluidRenderHandler;
+import de.leoxian.moonlightcore.client.fluid.FluidRendererRegistrar;
 import de.leoxian.moonlightcore.client.gui.GuiLayerRegistrar;
 import de.leoxian.moonlightcore.client.keymapping.KeyMappingRegistrar;
 import de.leoxian.moonlightcore.client.menu.MenuScreenRegistrar;
@@ -17,40 +17,22 @@ import de.leoxian.moonlightcore.client.render.BlockEntityRendererRegistrar;
 import de.leoxian.moonlightcore.client.render.EntityRendererRegistrar;
 import de.leoxian.moonlightcore.client.render.RenderPipelineRegistrar;
 import de.leoxian.moonlightcore.common.ClientModEntrypoint;
-import net.minecraft.client.renderer.block.FluidModel;
-import net.minecraft.core.Holder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.world.level.material.Fluid;
 
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public interface XplatClientAbstraction {
     XplatClientAbstraction INSTANCE = ServiceLoader.load(XplatClientAbstractionFactory.class).findFirst().orElseThrow().create();
 
     void initializeClientMod(final String modId, final ClientModEntrypoint entrypoint);
 
-    // |-----| Fluids |-----|
-
-    void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model, ClientFluidRenderHandler handler);
-
-    void registerFluidModel(Supplier<Fluid> fluid, FluidModel.Unbaked model);
-
-    default void registerFluidModel(Supplier<Fluid> source, Supplier<Fluid> flowing, FluidModel.Unbaked model) {
-        registerFluidModel(source, model);
-        registerFluidModel(flowing, model);
-    }
-
-    default void registerFluidModel(Supplier<Fluid> source, Supplier<Fluid> flowing, FluidModel.Unbaked model, ClientFluidRenderHandler handler) {
-        registerFluidModel(source, model, handler);
-        registerFluidModel(flowing, model, handler);
-    }
-
     // |-----| Registrars |-----|
+    void fluidRenderer(String namespace, Consumer<FluidRendererRegistrar> initializer);
+
     void guiLayers(String namespace, Consumer<GuiLayerRegistrar> initializer);
 
     void keyMappings(String namespace, Consumer<KeyMappingRegistrar> initializer);

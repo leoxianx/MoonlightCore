@@ -1,6 +1,6 @@
 package de.leoxian.moonlightcore.fabric.common.fluid;
 
-import de.leoxian.moonlightcore.common.fluid.FluidPropertiesHandler;
+import de.leoxian.moonlightcore.common.fluid.FluidAttributesHandler;
 import de.leoxian.moonlightcore.common.transfer.fluid.FluidResource;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariantAttributeHandler;
@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 
-public record FluidAttributeHandlerWrapper(FluidPropertiesHandler handler) implements FluidVariantAttributeHandler {
+public record FluidAttributeHandlerWrapper(FluidAttributesHandler handler) implements FluidVariantAttributeHandler {
     @Override
     public Component getName(FluidVariant fluidVariant) {
         return this.handler.getColoredName(FluidResource.of(fluidVariant.getFluid(), fluidVariant.getComponentsPatch()));
@@ -24,7 +24,7 @@ public record FluidAttributeHandlerWrapper(FluidPropertiesHandler handler) imple
 
     @Override
     public Optional<SoundEvent> getEmptySound(FluidVariant variant) {
-        return handler.getFillSound(FluidResource.of(variant.getFluid(), variant.getComponentsPatch()));
+        return handler.getEmptySound(FluidResource.of(variant.getFluid(), variant.getComponentsPatch()));
     }
 
     @Override
