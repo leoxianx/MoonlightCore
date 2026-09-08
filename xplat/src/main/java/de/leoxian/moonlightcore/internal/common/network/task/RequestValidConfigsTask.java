@@ -1,5 +1,6 @@
 package de.leoxian.moonlightcore.internal.common.network.task;
 
+import de.leoxian.moonlightcore.common.network.ServerConfigurationNetworking;
 import de.leoxian.moonlightcore.internal.common.network.s2c.S2CRequestValidConfigsPacket;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -9,12 +10,13 @@ import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 
 import java.util.function.Consumer;
 
-public record RequestValidConfigsTask(ServerConfigurationPacketListener packetListener) implements ConfigurationTask {
+public record RequestValidConfigsTask(ServerConfigurationPacketListenerImpl packetListener) implements ConfigurationTask {
     public static final Type TYPE = new Type("moonlightcore:request_valid_configs");
 
     @Override
     public void start(Consumer<Packet<?>> connection) {
         connection.accept(new ClientboundCustomPayloadPacket(S2CRequestValidConfigsPacket.INSTANCE));
+        ServerConfigurationNetworking.completeTask(packetListener, TYPE);
     }
 
     @Override

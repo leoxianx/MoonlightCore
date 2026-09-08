@@ -299,10 +299,9 @@ public class FabricAbstractionImpl implements XplatAbstraction {
 
     @Override
     public void initialize() {
-
-//        CommonEventHooks.bindFabricApiEvents();
+        CommonEventHooks.bindFabricApiEvents();
 
         ServerLifecycleEvents.SERVER_STARTING.register(currentServer::set);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> currentServer.set(null));
+        ServerLifecycleEvents.SERVER_STOPPED.register(_ -> currentServer.set(null));
     }
 }
